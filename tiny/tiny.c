@@ -4,7 +4,7 @@
 void doit(int fd);
 void read_requesthdrs(rio_t *rp);
 int parse_uri(char *uri, char *filename, char *cgiargs);
-void serve_static(int fd, char *filename, int filesize);
+void serve_static(int fd, char *filename, int filesize, char* method);
 void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs);
 void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg);
@@ -81,7 +81,7 @@ void doit(int fd)
   sscanf(buf, "%s %s %s", method, uri, version); // buf에서 문자열 3개를 읽어와 method, uri, version이라는 문자열에 저장한다.
 
   // 요청 method가 GET 아니면 종료. main으로 가서 연결 닫고 다음 요청 기다림.      
-  if (strcasecmp(method, "GET")) { // 문자열 비교 결과가 같으면 0을 반환하고, 다르면 0이 아닌 값을 반환합니다.
+  if (!(strcasecmp(method, "GET") == 0 || strcasecmp(method, "HEAD") == 0)) { // 문자열 비교 결과가 같으면 0을 반환하고, 다르면 0이 아닌 값을 반환합니다.
     clienterror(fd, method, "501", "Not Implemented", "Tiny does not implement this method");
     return;
   }
@@ -111,7 +111,7 @@ void doit(int fd)
 	    return;
 	  }
     // 정적 서버에 파일의 사이즈와 메서드를 같이 보낸다. -> Response header에 Content-length 위해!
-	  serve_static(fd, filename, sbuf.st_size);        
+	  serve_static(fd, filename, sbuf.st_size, method);        
   }
   else { /* Serve dynamic content */
     // !(일반 파일이다) or !(실행 권한이 있다)
@@ -220,7 +220,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
   클라이언트가 원하는 파일 디렉토리를 받아온다.
   응답 라인과 헤더를 작성하고 서버에게 보낸다.
 */
-void serve_static(int fd, char *filename, int filesize)
+void serve_static(int fd, char *filename, int filesize, char* method)
 {
   int srcfd;
   char *srcp, filetype[MAXLINE], buf[MAXBUF];
@@ -237,19 +237,21 @@ void serve_static(int fd, char *filename, int filesize)
   sprintf(buf, "Content-type: %s\r\n\r\n", filetype);
   Rio_writen(fd, buf, strlen(buf));
 
-  // 더알아보기
-  /* Send response body to client */
-  srcfd = Open(filename, O_RDONLY, 0); // filename의 이름을 갖는 파일을 읽기 권한으로 불러온다.
+  if (strcasecmp(method, "GET") == 0){
+    // 더알아보기
+    /* Send response body to client */
+    srcfd = Open(filename, O_RDONLY, 0); // filename의 이름을 갖는 파일을 읽기 권한으로 불러온다.
 
-  // srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0); // 파일 크기만큼의 메모리를 동적할당한다.
-  srcp = Malloc(filesize);
-  // srcfd 식별자에서 srcp메모리 위치로 최대 filesize바이트를 전송한다.
-  Rio_readn(srcfd, srcp, filesize);
-  Close(srcfd);
-  // srcp메모리 위치에서 식별자 fd로 filesize바이트를 전송한다.
-  Rio_writen(fd, srcp, filesize); // 해당 메모리에 있는 파일 내용들을 클라이언트에 보낸다(읽는다).
-  // Munmap(srcp, filesize);
-  Free(srcp);
+    // srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0); // 파일 크기만큼의 메모리를 동적할당한다.
+    srcp = Malloc(filesize);
+    // srcfd 식별자에서 srcp메모리 위치로 최대 filesize바이트를 전송한다.
+    Rio_readn(srcfd, srcp, filesize);
+    Close(srcfd);
+    // srcp메모리 위치에서 식별자 fd로 filesize바이트를 전송한다.
+    Rio_writen(fd, srcp, filesize); // 해당 메모리에 있는 파일 내용들을 클라이언트에 보낸다(읽는다).
+    // Munmap(srcp, filesize);
+    Free(srcp);
+  }
 }
 
 /*

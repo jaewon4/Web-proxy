@@ -22,7 +22,7 @@ int main(){
         // n1 = atoi(arg1); // 문자열을 정수형으로 변환하는 데 사용되는 함수
         // n2 = atoi(arg2);
 
-        sscanf(buf, "num1=%d", &n1);
+        sscanf(buf, "num1=%d", &n1); // buf에서 \0까지 읽어 들이는데 num1=을제외하고 %d형식을 정수형식으로 수를 읽어 값을 n1에 저장하게 된다.
         sscanf(p + 1, "num2=%d", &n2);
     }
 
