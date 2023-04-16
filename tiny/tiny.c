@@ -167,12 +167,15 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
     strcpy(cgiargs, ""); // 정적이니까 cgiargs는 아무것도 없다.                      
     strcpy(filename, "."); // 현재경로에서부터 시작 ./path ~~                    
     strcat(filename, uri); // filename 스트링에 uri 스트링을 이어붙인다.
-
     // 만약 uri뒤에 '/'이 있다면 그 뒤에 home.html을 붙인다.
     // 내가 브라우저에 http://localhost:8000만 입력하면 바로 뒤에 '/'이 생기는데,
-    // '/' 뒤에 home.html을 붙여 해당 위치 해당 이름의 정적 컨텐츠가 출력된다.               
-    if (uri[strlen(uri)-1] == '/')                   
-        strcat(filename, "home.html");
+    // '/' 뒤에 home.html을 붙여 해당 위치 해당 이름의 정적 컨텐츠가 출력된다.
+    printf("***uri : %s\n", uri);
+    printf("***filename : %s\n", filename);
+    if (uri[strlen(uri)-1] == '/')
+      strcat(filename, "home.html");
+    else if (strcmp(uri, "/mp4") == 0)
+      strcpy(filename, "test.html");
     /* 예시
       uri : /godzilla.jpg
       ->
@@ -237,12 +240,16 @@ void serve_static(int fd, char *filename, int filesize)
   // 더알아보기
   /* Send response body to client */
   srcfd = Open(filename, O_RDONLY, 0); // filename의 이름을 갖는 파일을 읽기 권한으로 불러온다.
-  srcp = (char*)malloc(filesize);
+
   // srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0); // 파일 크기만큼의 메모리를 동적할당한다.
+  srcp = Malloc(filesize);
+  // srcfd 식별자에서 srcp메모리 위치로 최대 filesize바이트를 전송한다.
+  Rio_readn(srcfd, srcp, filesize);
   Close(srcfd);
+  // srcp메모리 위치에서 식별자 fd로 filesize바이트를 전송한다.
   Rio_writen(fd, srcp, filesize); // 해당 메모리에 있는 파일 내용들을 클라이언트에 보낸다(읽는다).
-  free(srcp);
   // Munmap(srcp, filesize);
+  Free(srcp);
 }
 
 /*
