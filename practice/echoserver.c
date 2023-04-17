@@ -17,10 +17,8 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-
     /* 해당 포트 번호에 적합한 듣기 식별자를 만들어 준다. */
     listenfd = Open_listenfd(argv[1]);
-
 
     while (1) {
         /* 클라이언트의 연결 요청을 계속 받아서 연결 식별자를 만든다. */
@@ -28,8 +26,7 @@ int main(int argc, char **argv)
         connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen); // 클라이언트와 통신하는 연결 식별자
         
         /* 클라이언트와 제대로 연결됐다는 것을 출력해준다. */
-        Getnameinfo((SA *) &clientaddr, clientlen, 
-                        client_hostname, MAXLINE, client_port, MAXLINE, 0);
+        Getnameinfo((SA *) &clientaddr, clientlen, client_hostname, MAXLINE, client_port, MAXLINE, 0);
         printf("Connected to (%s, %s)\n", client_hostname, client_port);
         
         /* 클라이언트가 보낸 데이터를 그대로 버퍼에 저장하고 그 데이터를 그대로 쓴다. */
