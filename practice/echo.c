@@ -16,7 +16,7 @@ void echo(int connfd)
 
         /* buf 안에는 클라이언트가 보낸 데이터 그대로 있다. */
         /* buf 메모리 안의 클라이언트가 보낸 바이트 만큼의(사실상 모두)를 clientfd로 보낸다. */
-    	Rio_writen(connfd, buf, n);
+        Rio_writen(connfd, buf, n);
     }
 
     /* 클라이언트 식별자가 닫히면 루프 종료 및 함수도 종료. */
